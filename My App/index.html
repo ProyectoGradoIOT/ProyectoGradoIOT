@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba</title>
+</head>
+
+<body>
+
+
+    Hello World!
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<script>
+
+    const options = {
+        connectTimeout: 4000,
+
+        // Authentication
+        clientId: 'emqx-1',
+        //username: 'testuser',
+        //password: '121212',
+
+        keepalive: 60,
+        clean: true,
+    }
+
+    // WebSocket connect url
+    const WebSocket_URL = 'ws://flowriver.online:8083/mqtt';
+
+
+    const client = mqtt.connect(WebSocket_URL, options);
+
+    client.on('connect', () => {
+        console.log('Connect success');
+        console.log('Yes!!!');
+
+        client.subscribe("testtopic2", function (err) {
+                if (!err) {
+                    //No hubo error, avisamos pa' saber
+                    console.log("SUBSCRIBE - SUCCESS");
+                } else {
+                    //Paila mi rey, revise esa mondá
+                    console.log("SUBSCRIBE - ERROR");
+                }
+            });
+
+
+        //Enviamos un topico de ejemplo
+        client.publish('testtopic', 'first message', {
+                'quos': 0,
+                'retain': true
+            });
+
+    });
+
+    client.on('message', function (topic, message) {
+        console.log("The topic is " + topic + " and the message is " + message.toString());
+        //var msg = message.toString();
+    });
+
+    client.on('reconnect', (error) => {
+        console.log('reconnecting:', error);
+    });
+
+    client.on('error', (error) => {
+        console.log('Connect Error:', error);
+    });
+
+</script>
+
+</body>
+
+</html>
