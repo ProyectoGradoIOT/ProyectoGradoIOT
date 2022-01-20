@@ -10,7 +10,6 @@
 
 <body>
 
-
     Hello World!
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -39,7 +38,7 @@
         console.log('Connect success');
         console.log('Yes!!!');
 
-        client.subscribe("testtopic2", function (err) {
+        client.subscribe("flowriver/#", function (err) {
                 if (!err) {
                     //No hubo error, avisamos pa' saber
                     console.log("SUBSCRIBE - SUCCESS");
@@ -51,7 +50,7 @@
 
 
         //Enviamos un topico de ejemplo
-        client.publish('testtopic', 'first message', {
+        client.publish('testtopic', 'Prueba: Estoy funcionando', {
                 'quos': 0,
                 'retain': true
             });
