@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Colors.h>
 #include <IoTicosSplitter.h>
-#include <ESP8266WiFi.h>	   //#include <WiFi.h>
-#include <ESP8266HTTPClient.h> //<HTTPClient.h>
+#include <WiFi.h>	   //#include <WiFi.h>
+#include <HTTPClient.h> //<HTTPClient.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <stdlib.h>
@@ -10,10 +10,10 @@
 //----------- MQTT CONFIG -----------//
 const char *mqtt_server = "flowriver.online";
 const int mqtt_port = 1883;
-const char *mqtt_user = "ESP8266-2";
+const char *mqtt_user = "ESP32-CAM";
 const char *mqtt_pass = "flowriver";
 const char *root_topic_subscribe = "testtopic";
-const char *root_topic_publish = "flowriver/Esp8266-2";
+const char *root_topic_publish = "flowriver/ESP32-CAM";
 
 //----------- WIFI -----------//
 const char *ssid = "CASAUIS";
@@ -105,7 +105,7 @@ void reconnect()
 	{
 		Serial.print("Intentando conexión Mqtt...");
 		// Creamos un cliente ID
-		String clientId = "ESP8266-2";
+		String clientId = "ESP32-CAM";
 		clientId += String(random(0xffff), HEX);
 		// Intentamos conectar
 		if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass))
