@@ -14,9 +14,20 @@
 #define DHTPIN D2
 #define DHTTYPE DHT11
 #define PIN_TRIG D5
-#define PIN_ECHO D6
+#define PIN_ECHO D3
+#define SENSOR D1
 
-DHT dht(DHTPIN, DHTTYPE,6);
+long currentMillis = 0;
+long previousMillis = 0;
+int interval = 1000;
+float calibrationFactor = 4.5;
+volatile byte pulseCount;
+byte pulse1Sec = 0;
+float flowRate = 0;
+unsigned int flowMilliLitres;
+unsigned long totalMilliLitres;
+
+DHT dht(DHTPIN, DHTTYPE, 6);
 
 float tiempo;
 float distancia;
@@ -28,7 +39,12 @@ float LevelAgua();
 float DHTHumedad();
 float DHTTemperatura();
 float LevelPrecipitaciones();
+float WaterFlow();
 
+void IRAM_ATTR pulseCounter()
+{
+	pulseCount++;
+}
 
 //----------- MQTT CONFIG -----------//
 const char *mqtt_server = "flowriver.online";
@@ -51,7 +67,6 @@ long Temperatura = 0;
 long Humedad = 0;
 long Precipitaciones = 0;
 
-
 //----------- Funciones -----------//
 void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
@@ -63,6 +78,12 @@ void setup()
 	pinMode(PIN_TRIG, OUTPUT);
 	pinMode(PIN_ECHO, INPUT);
 	dht.begin();
+	pinMode(SENSOR, INPUT_PULLUP);
+	pulseCount = 0;
+	flowRate = 0.0;
+	flowMilliLitres = 0;
+	previousMillis = 0;
+	attachInterrupt(digitalPinToInterrupt(SENSOR), pulseCounter, FALLING);
 	setup_wifi();
 	client.setServer(mqtt_server, mqtt_port);
 	client.setCallback(callback);
@@ -74,19 +95,19 @@ void loop()
 	{
 		reconnect();
 	}
-	
-	  if (client.connected()){
-		VelocidadAgua = 45+rand()%(65-45);
-		String str = "{'NivelAgua':" + String(LevelAgua())
-		+ ",'VelocidadAgua':" + String(VelocidadAgua) 
-		+ ",'Temperatura':" + String(DHTTemperatura())
-		+ ",'Humedad':" + String(DHTHumedad())
+
+	if (client.connected())
+	{
+		String str = "{'NivelAgua':" + String(LevelAgua()) 
+		+ ",'VelocidadAgua':" + String(WaterFlow()) // L/min
+		+ ",'Temperatura':" + String(DHTTemperatura()) 
+		+ ",'Humedad':" + String(DHTHumedad()) 
 		+ ",'Precipitaciones':" + String(LevelPrecipitaciones()) + "}";
-		str.toCharArray(msg,125);
-		client.publish(root_topic_publish,msg);
+		str.toCharArray(msg, 125);
+		client.publish(root_topic_publish, msg);
 		delay(1000);
 		Serial.println(str);
-	  }
+	}
 
 	client.loop();
 }
@@ -195,7 +216,22 @@ float DHTTemperatura()
 	return temperatura;
 }
 
-float LevelPrecipitaciones(){
-	precipitaciones = analogRead(PREC)/10;
+float LevelPrecipitaciones()
+{
+	precipitaciones = analogRead(PREC) / 10;
 	return precipitaciones;
+}
+
+float WaterFlow()
+{
+	currentMillis = millis();
+	if (currentMillis - previousMillis > interval)
+	{
+		pulse1Sec = pulseCount;
+		pulseCount = 0;
+		flowRate = ((1000.0 / (millis() - previousMillis)) * pulse1Sec) / calibrationFactor;
+		previousMillis = millis();
+		flowMilliLitres = (flowRate / 60) * 1000;
+	}
+	return int(flowRate);
 }
