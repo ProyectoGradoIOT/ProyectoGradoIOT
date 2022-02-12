@@ -1,3 +1,5 @@
+//----------- Librerías -----------//
+
 #include <Arduino.h>
 #include <wire.h>
 #include <Colors.h>
@@ -10,12 +12,16 @@
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
 
+//----------- Pines -----------//
+
 #define PREC A0
 #define DHTPIN D2
 #define DHTTYPE DHT11
 #define PIN_TRIG D5
 #define PIN_ECHO D3
 #define SENSOR D1
+
+//----------- Variables de Sensor -----------//
 
 long currentMillis = 0;
 long previousMillis = 0;
@@ -27,7 +33,11 @@ float flowRate = 0;
 unsigned int flowMilliLitres;
 unsigned long totalMilliLitres;
 
+//----------- Definición de Sensores -----------//
+
 DHT dht(DHTPIN, DHTTYPE, 6);
+
+//----------- Returns de Sensores -----------//
 
 float tiempo;
 float distancia;
@@ -35,11 +45,15 @@ float humedad;
 float temperatura;
 float precipitaciones;
 
+//----------- Definición de Funciones -----------//
+
 float LevelAgua();
 float DHTHumedad();
 float DHTTemperatura();
 float LevelPrecipitaciones();
 float WaterFlow();
+
+//----------- Funcíon de apoyo -----------//
 
 void IRAM_ATTR pulseCounter()
 {
@@ -58,7 +72,7 @@ const char *root_topic_publish = "flowriver/Esp8266-2";
 const char *ssid = "CASAUIS_2";
 const char *password = "a1b2c3d4/casauis";
 
-//----------- Globales -----------//
+//----------- Variables de Envio -----------//
 WiFiClient espClient;
 PubSubClient client(espClient);
 char msg[125];
@@ -67,10 +81,12 @@ long Temperatura = 0;
 long Humedad = 0;
 long Precipitaciones = 0;
 
-//----------- Funciones -----------//
+//----------- Funciones Wifi -----------//
 void callback(char *topic, byte *payload, unsigned int length);
 void reconnect();
 void setup_wifi();
+
+//----------- Configuración -----------//
 
 void setup()
 {
@@ -88,6 +104,8 @@ void setup()
 	client.setServer(mqtt_server, mqtt_port);
 	client.setCallback(callback);
 }
+
+//----------- Loop -----------//
 
 void loop()
 {
@@ -199,16 +217,21 @@ float LevelAgua()
 	digitalWrite(PIN_TRIG, LOW);
 
 	tiempo = pulseIn(PIN_ECHO, HIGH);
-	distancia = 217 - tiempo / 58.3;
+	distancia = 217 - tiempo / 58.3; //Tomamos tamaño maximo del aislante del sensor 
+	//restamos por la distancia a la fuente
 
 	return distancia;
 }
+
+//----------- DHT11 Humedad -----------//
 
 float DHTHumedad()
 {
 	humedad = dht.readHumidity();
 	return humedad;
 }
+
+//----------- DHT11 Temperatura -----------//
 
 float DHTTemperatura()
 {
@@ -221,6 +244,8 @@ float LevelPrecipitaciones()
 	precipitaciones = analogRead(PREC) / 10;
 	return precipitaciones;
 }
+
+//----------- WATER FLOW SENSOR -----------//
 
 float WaterFlow()
 {
@@ -235,3 +260,5 @@ float WaterFlow()
 	}
 	return int(flowRate);
 }
+
+// :)
