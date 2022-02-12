@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <wire.h>
 #include <Colors.h>
 #include <IoTicosSplitter.h>
 #include <ESP8266WiFi.h>	   //#include <WiFi.h>
@@ -6,6 +7,28 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <stdlib.h>
+#include <DHT.h>
+#include <Adafruit_Sensor.h>
+
+#define PREC A0
+#define DHTPIN D2
+#define DHTTYPE DHT11
+#define PIN_TRIG D5
+#define PIN_ECHO D6
+
+DHT dht(DHTPIN, DHTTYPE,6);
+
+float tiempo;
+float distancia;
+float humedad;
+float temperatura;
+float precipitaciones;
+
+float LevelAgua();
+float DHTHumedad();
+float DHTTemperatura();
+float LevelPrecipitaciones();
+
 
 //----------- MQTT CONFIG -----------//
 const char *mqtt_server = "flowriver.online";
@@ -16,14 +39,13 @@ const char *root_topic_subscribe = "testtopic";
 const char *root_topic_publish = "flowriver/Esp8266-2";
 
 //----------- WIFI -----------//
-const char *ssid = "CASAUIS";
+const char *ssid = "CASAUIS_2";
 const char *password = "a1b2c3d4/casauis";
 
 //----------- Globales -----------//
 WiFiClient espClient;
 PubSubClient client(espClient);
 char msg[125];
-long NivelAgua = 0;
 long VelocidadAgua = 0;
 long Temperatura = 0;
 long Humedad = 0;
@@ -38,6 +60,9 @@ void setup_wifi();
 void setup()
 {
 	Serial.begin(921600);
+	pinMode(PIN_TRIG, OUTPUT);
+	pinMode(PIN_ECHO, INPUT);
+	dht.begin();
 	setup_wifi();
 	client.setServer(mqtt_server, mqtt_port);
 	client.setCallback(callback);
@@ -45,26 +70,22 @@ void setup()
 
 void loop()
 {
-
 	if (!client.connected())
 	{
 		reconnect();
 	}
 	
 	  if (client.connected()){
-		NivelAgua = 1+rand()%(5-1);
 		VelocidadAgua = 45+rand()%(65-45);
-		Temperatura =19+rand()%(29-19);
-		Humedad =20+rand()%(100-20);
-		Precipitaciones = 0+rand()%(10-0);
-		String str = "{'NivelAgua':" + String(NivelAgua)
+		String str = "{'NivelAgua':" + String(LevelAgua())
 		+ ",'VelocidadAgua':" + String(VelocidadAgua) 
-		+ ",'Temperatura':" + String(Temperatura)
-		+ ",'Humedad':" + String(Humedad)
-		+ ",'Precipitaciones':" + String(Precipitaciones) + "}";
+		+ ",'Temperatura':" + String(DHTTemperatura())
+		+ ",'Humedad':" + String(DHTHumedad())
+		+ ",'Precipitaciones':" + String(LevelPrecipitaciones()) + "}";
 		str.toCharArray(msg,125);
 		client.publish(root_topic_publish,msg);
-		delay(60000);
+		delay(1000);
+		Serial.println(str);
 	  }
 
 	client.loop();
@@ -145,4 +166,36 @@ void callback(char *topic, byte *payload, unsigned int length)
 	}
 	incoming.trim();
 	Serial.println("-> " + incoming);
+}
+
+float LevelAgua()
+{
+	digitalWrite(PIN_TRIG, LOW); // para generar un pulso limpio ponemos a LOW 4us
+	delayMicroseconds(4);
+
+	digitalWrite(PIN_TRIG, HIGH); // generamos Trigger (disparo) de 10us
+	delayMicroseconds(10);
+	digitalWrite(PIN_TRIG, LOW);
+
+	tiempo = pulseIn(PIN_ECHO, HIGH);
+	distancia = 217 - tiempo / 58.3;
+
+	return distancia;
+}
+
+float DHTHumedad()
+{
+	humedad = dht.readHumidity();
+	return humedad;
+}
+
+float DHTTemperatura()
+{
+	temperatura = dht.readTemperature();
+	return temperatura;
+}
+
+float LevelPrecipitaciones(){
+	precipitaciones = analogRead(PREC)/10;
+	return precipitaciones;
 }
