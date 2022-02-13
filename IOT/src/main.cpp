@@ -207,6 +207,8 @@ void callback(char *topic, byte *payload, unsigned int length)
 	Serial.println("-> " + incoming);
 }
 
+//----------- Nivel del Agua / Ultrasonido -----------//
+
 float LevelAgua()
 {
 	digitalWrite(PIN_TRIG, LOW); // para generar un pulso limpio ponemos a LOW 4us
@@ -239,13 +241,15 @@ float DHTTemperatura()
 	return temperatura;
 }
 
+//----------- Water Sensor Level -----------//
+
 float LevelPrecipitaciones()
 {
 	precipitaciones = analogRead(PREC) / 10;
 	return precipitaciones;
 }
 
-//----------- WATER FLOW SENSOR -----------//
+//----------- Water Flow Sensor -----------//
 
 float WaterFlow()
 {
