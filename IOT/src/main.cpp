@@ -37,14 +37,6 @@ unsigned long totalMilliLitres;
 
 DHT dht(DHTPIN, DHTTYPE, 6);
 
-//----------- Returns de Sensores -----------//
-
-float tiempo;
-float distancia;
-float humedad;
-float temperatura;
-float precipitaciones;
-
 //----------- Definición de Funciones -----------//
 
 float LevelAgua();
@@ -52,6 +44,7 @@ float DHTHumedad();
 float DHTTemperatura();
 float LevelPrecipitaciones();
 float WaterFlow();
+String Fecha();
 
 //----------- Funcíon de apoyo -----------//
 
@@ -66,7 +59,7 @@ const int mqtt_port = 1883;
 const char *mqtt_user = "ESP8266-2";
 const char *mqtt_pass = "flowriver";
 const char *root_topic_subscribe = "testtopic";
-const char *root_topic_publish = "flowriver/Esp8266-2";
+const char *root_topic_publish = "flowriver/ESP8266-2";
 
 //----------- WIFI -----------//
 const char *ssid = "CASAUIS_2";
@@ -116,11 +109,8 @@ void loop()
 
 	if (client.connected())
 	{
-		String str = "{'NivelAgua':" + String(LevelAgua()) 
-		+ ",'VelocidadAgua':" + String(WaterFlow()) // L/min
-		+ ",'Temperatura':" + String(DHTTemperatura()) 
-		+ ",'Humedad':" + String(DHTHumedad()) 
-		+ ",'Precipitaciones':" + String(LevelPrecipitaciones()) + "}";
+		String str = "{'NivelAgua':" + String(LevelAgua()) + ",'VelocidadAgua':" + String(WaterFlow()) // L/min
+					 + ",'Temperatura':" + String(DHTTemperatura()) + ",'Humedad':" + String(DHTHumedad()) + ",'Precipitaciones':" + String(LevelPrecipitaciones()) + ",'Fecha':'" + Fecha() + "'}";
 		str.toCharArray(msg, 125);
 		client.publish(root_topic_publish, msg);
 		delay(1000);
@@ -211,6 +201,9 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 float LevelAgua()
 {
+	float tiempo;
+	float distancia;
+
 	digitalWrite(PIN_TRIG, LOW); // para generar un pulso limpio ponemos a LOW 4us
 	delayMicroseconds(4);
 
@@ -219,8 +212,8 @@ float LevelAgua()
 	digitalWrite(PIN_TRIG, LOW);
 
 	tiempo = pulseIn(PIN_ECHO, HIGH);
-	distancia = 217 - tiempo / 58.3; //Tomamos tamaño maximo del aislante del sensor 
-	//restamos por la distancia a la fuente
+	distancia = 217 - tiempo / 58.3; // Tomamos tamaño maximo del aislante del sensor
+	// restamos por la distancia a la fuente
 
 	return distancia;
 }
@@ -229,7 +222,14 @@ float LevelAgua()
 
 float DHTHumedad()
 {
+	float humedad;
+	bool si;
 	humedad = dht.readHumidity();
+	si = isnan(humedad);
+	if (si)
+	{
+		humedad = 0;
+	}
 	return humedad;
 }
 
@@ -237,7 +237,14 @@ float DHTHumedad()
 
 float DHTTemperatura()
 {
+	float temperatura;
+	bool si;
 	temperatura = dht.readTemperature();
+	si = isnan(temperatura);
+	if (si)
+	{
+		temperatura = 0;
+	}
 	return temperatura;
 }
 
@@ -245,6 +252,7 @@ float DHTTemperatura()
 
 float LevelPrecipitaciones()
 {
+	float precipitaciones;
 	precipitaciones = analogRead(PREC) / 10;
 	return precipitaciones;
 }
@@ -265,4 +273,30 @@ float WaterFlow()
 	return int(flowRate);
 }
 
+//----------- Tiempo -----------//
+
+String Fecha()
+{
+	String fecha;
+	String hora;
+	WiFiClient client;
+	HTTPClient http;
+
+	http.begin(client, "http://worldtimeapi.org/api/timezone/America/Bogota");
+	int httpCode = http.GET();
+	if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
+	{
+		String payload = http.getString();
+
+		int beginS = payload.indexOf("datetime");
+		int endS = payload.indexOf("day_of_week");
+		fecha = payload.substring(beginS + 11, endS - 25);
+		hora = payload.substring(beginS + 22, endS - 16);
+	}
+	return fecha + "','hora': '" + hora;
+}
+
 // :)
+//Transformación de los datos 
+// obj = datos del websocket
+//obj = JSON.parse(obj.replaceAll("'",'"'));
