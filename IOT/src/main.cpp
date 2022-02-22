@@ -18,7 +18,7 @@
 #define DHTPIN D2
 #define DHTTYPE DHT11
 #define PIN_TRIG D5
-#define PIN_ECHO D3
+#define PIN_ECHO D6
 #define SENSOR D1
 
 //----------- Variables de Sensor -----------//
