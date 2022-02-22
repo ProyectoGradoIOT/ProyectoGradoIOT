@@ -109,11 +109,11 @@ void loop()
 
 	if (client.connected())
 	{
-		String str = "{'NivelAgua':" + String(LevelAgua()) + ",'VelocidadAgua':" + String(WaterFlow()) // L/min
-					 + ",'Temperatura':" + String(DHTTemperatura()) + ",'Humedad':" + String(DHTHumedad()) + ",'Precipitaciones':" + String(LevelPrecipitaciones()) + ",'Fecha':'" + Fecha() + "'}";
+		String str = "{'NivelAgua':" + String(LevelAgua()) + ",'VelAgua':" + String(WaterFlow()) // L/min
+					 + ",'Temp':" + String(DHTTemperatura()) + ",'Hum':" + String(DHTHumedad()) + ",'Prec':" + String(LevelPrecipitaciones()) + ",'Fecha':'" + Fecha() + "'}";
 		str.toCharArray(msg, 125);
 		client.publish(root_topic_publish, msg);
-		delay(1000);
+		delay(59000);//Hay un segundo por defecto
 		Serial.println(str);
 	}
 
@@ -293,7 +293,7 @@ String Fecha()
 		fecha = payload.substring(beginS + 11, endS - 25);
 		hora = payload.substring(beginS + 22, endS - 16);
 	}
-	return fecha + "','hora': '" + hora;
+	return fecha + "','Hora': '" + hora;
 }
 
 // :)
