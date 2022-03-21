@@ -62,8 +62,8 @@ const char *root_topic_subscribe = "testtopic";
 const char *root_topic_publish = "flowriver/ESP8266-2";
 
 //----------- WIFI -----------//
-const char *ssid = "CASAUIS_2";
-const char *password = "a1b2c3d4/casauis";
+const char *ssid = "CasaUIS";
+const char *password = "YTR1256FGD";
 
 //----------- Variables de Envio -----------//
 WiFiClient espClient;
