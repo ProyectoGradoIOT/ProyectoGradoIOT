@@ -290,10 +290,9 @@ String Fecha()
 
 		int beginS = payload.indexOf("datetime");
 		int endS = payload.indexOf("day_of_week");
-		fecha = payload.substring(beginS + 11, endS - 25);
-		hora = payload.substring(beginS + 22, endS - 16);
+		fecha = payload.substring(beginS + 11, endS - 16);
 	}
-	return fecha + "','Hora': '" + hora;
+	return fecha;
 }
 
 // :)
