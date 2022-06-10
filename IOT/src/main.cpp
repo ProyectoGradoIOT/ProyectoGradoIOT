@@ -60,6 +60,8 @@ const char *mqtt_user = "ESP8266-2";
 const char *mqtt_pass = "flowriver";
 const char *root_topic_subscribe = "testtopic";
 const char *root_topic_publish = "flowriver/ESP8266-2";
+const int nivelPrecaucion = 162;
+const int nivelAlerta = 180;
 
 //----------- WIFI -----------//
 const char *ssid = "CasaUIS";
@@ -113,7 +115,13 @@ void loop()
 					 + ",'Temp':" + String(DHTTemperatura()) + ",'Hum':" + String(DHTHumedad()) + ",'Prec':" + String(LevelPrecipitaciones()) + ",'Fecha':'" + Fecha() + "'}";
 		str.toCharArray(msg, 125);
 		client.publish(root_topic_publish, msg);
-		delay(59000);//Hay un segundo por defecto
+		if (LevelAgua() > nivelAlerta){	
+		delay(9000);//Hay cada 10 segundos
+		Serial.println("En estado de Alerta");
+		}
+		else{
+		delay(59000);//cada minuto
+		}
 		Serial.println(str);
 	}
 
