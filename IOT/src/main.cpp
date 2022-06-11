@@ -32,6 +32,8 @@ byte pulse1Sec = 0;
 float flowRate = 0;
 unsigned int flowMilliLitres;
 unsigned long totalMilliLitres;
+int nivelPrecaucion = 162;
+int nivelAlerta = 180;
 
 //----------- Definición de Sensores -----------//
 
@@ -45,6 +47,9 @@ float DHTTemperatura();
 float LevelPrecipitaciones();
 float WaterFlow();
 String Fecha();
+int Alerta();
+int NivelPrecaucion();
+
 
 //----------- Funcíon de apoyo -----------//
 
@@ -56,12 +61,11 @@ void IRAM_ATTR pulseCounter()
 //----------- MQTT CONFIG -----------//
 const char *mqtt_server = "flowriver.online";
 const int mqtt_port = 1883;
-const char *mqtt_user = "ESP8266-2";
+const char *mqtt_user = "ESP8266-1";
 const char *mqtt_pass = "flowriver";
 const char *root_topic_subscribe = "testtopic";
-const char *root_topic_publish = "flowriver/ESP8266-2";
-const int nivelPrecaucion = 162;
-const int nivelAlerta = 180;
+const char *root_topic_publish = "flowriver/ESP8266-1";
+
 
 //----------- WIFI -----------//
 const char *ssid = "CasaUIS";
@@ -115,6 +119,9 @@ void loop()
 					 + ",'Temp':" + String(DHTTemperatura()) + ",'Hum':" + String(DHTHumedad()) + ",'Prec':" + String(LevelPrecipitaciones()) + ",'Fecha':'" + Fecha() + "'}";
 		str.toCharArray(msg, 125);
 		client.publish(root_topic_publish, msg);
+		nivelPrecaucion = NivelPrecaucion();
+		nivelAlerta = Alerta();
+
 		if (LevelAgua() > nivelAlerta){	
 		delay(9000);//Hay cada 10 segundos
 		Serial.println("En estado de Alerta");
@@ -123,6 +130,8 @@ void loop()
 		delay(59000);//cada minuto
 		}
 		Serial.println(str);
+		Serial.println(nivelPrecaucion);
+		Serial.println(nivelAlerta);
 	}
 
 	client.loop();
@@ -163,7 +172,7 @@ void reconnect()
 	{
 		Serial.print("Intentando conexión Mqtt...");
 		// Creamos un cliente ID
-		String clientId = "ESP8266-2";
+		String clientId = "ESP8266-1";
 		clientId += String(random(0xffff), HEX);
 		// Intentamos conectar
 		if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass))
@@ -223,7 +232,7 @@ float LevelAgua()
 	distancia = 217 - tiempo / 58.3; // Tomamos tamaño maximo del aislante del sensor
 	// restamos por la distancia a la fuente
 
-	return distancia;
+	return 100+rand()%(200-100);
 }
 
 //----------- DHT11 Humedad -----------//
@@ -238,7 +247,7 @@ float DHTHumedad()
 	{
 		humedad = 0;
 	}
-	return humedad;
+	return 10+rand()%(90-10);
 }
 
 //----------- DHT11 Temperatura -----------//
@@ -253,7 +262,7 @@ float DHTTemperatura()
 	{
 		temperatura = 0;
 	}
-	return temperatura;
+	return 20+rand()%(40-20);
 }
 
 //----------- Water Sensor Level -----------//
@@ -262,7 +271,7 @@ float LevelPrecipitaciones()
 {
 	float precipitaciones;
 	precipitaciones = analogRead(PREC) / 10;
-	return precipitaciones;
+	return 1+rand()%(10-1);
 }
 
 //----------- Water Flow Sensor -----------//
@@ -278,7 +287,7 @@ float WaterFlow()
 		previousMillis = millis();
 		flowMilliLitres = (flowRate / 60) * 1000;
 	}
-	return int(flowRate);
+	return 10+rand()%(50-10);
 }
 
 //----------- Tiempo -----------//
@@ -300,9 +309,48 @@ String Fecha()
 		int endS = payload.indexOf("day_of_week");
 		fecha = payload.substring(beginS + 11, endS - 16);
 	}
+
 	return fecha;
 }
 
+
+int Alerta()
+{
+	int alerta = 0;
+	WiFiClient client;
+	HTTPClient http;
+
+	http.begin(client, "http://3.134.188.186:3000/api/estacion/topic/ESP8266-1");
+	int httpCode = http.GET();
+	if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
+	{
+		String payload = http.getString();
+
+		int beginS = payload.indexOf("nivelAlerta");
+		int endS = payload.indexOf("}]}");
+		alerta = payload.substring(beginS + 13, endS).toInt();
+	}
+	return alerta;
+}
+
+int NivelPrecaucion()
+{
+	int Precaucion = 0;
+	WiFiClient client;
+	HTTPClient http;
+
+	http.begin(client, "http://3.134.188.186:3000/api/estacion/topic/ESP8266-1");
+	int httpCode = http.GET();
+	if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
+	{
+		String payload = http.getString();
+
+		int beginS = payload.indexOf("nivelPrecaucion");
+		int endS = payload.indexOf("nivelAlerta");
+		Precaucion = payload.substring(beginS + 17, endS-2).toInt();
+	}
+	return Precaucion;
+}
 // :)
 //Transformación de los datos 
 // obj = datos del websocket
